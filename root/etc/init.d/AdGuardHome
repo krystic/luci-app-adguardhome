@@ -30,6 +30,12 @@ set_forward_dnsmasq()
 		fi
 		uci add_list dhcp.@dnsmasq[0].server=$server
 	done
+	
+	OLD_RESOLVFILE="`uci get dhcp.@dnsmasq[0].resolvfile 2>/dev/null`"
+	if [ ! -z $OLD_RESOLVFILE ]; then
+		uci set	dhcp.@dnsmasq[0]._oldresolvfile=$OLD_RESOLVFILE
+	fi
+
 	uci delete dhcp.@dnsmasq[0].resolvfile 2>/dev/null
 	uci set dhcp.@dnsmasq[0].noresolv=1
 	uci commit dhcp
@@ -49,7 +55,13 @@ stop_forward_dnsmasq()
 	uci del_list dhcp.@dnsmasq[0].server=$addr 2>/dev/null
 	addrlist="`uci get dhcp.@dnsmasq[0].server 2>/dev/null`"
 	if [ -z "$addrlist" ] ; then
-		uci set dhcp.@dnsmasq[0].resolvfile=/tmp/resolv.conf.auto 2>/dev/null
+		OLD_RESOLVFILE="`uci get dhcp.@dnsmasq[0]._oldresolvfile 2>/dev/null`"
+		if [ ! -z $OLD_RESOLVFILE ]; then
+			uci set dhcp.@dnsmasq[0].resolvfile=$OLD_RESOLVFILE 2>/dev/null
+		else
+			uci set dhcp.@dnsmasq[0].resolvfile=/tmp/resolv.conf.d/resolv.conf.auto 2>/dev/null
+		fi
+
 		uci delete dhcp.@dnsmasq[0].noresolv 2>/dev/null
 	fi
 	uci commit dhcp
